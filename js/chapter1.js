@@ -1135,6 +1135,10 @@
       if(def.evilThing){
         ctx.globalAlpha=.32;ctx.fillStyle="#ff163d";ctx.fillRect(e.x-30*(e.size||1),e.y-30*(e.size||1),60*(e.size||1),60*(e.size||1));ctx.globalAlpha=1;
         ctx.fillStyle="#ff6b7d";ctx.fillText("EVIL THING",e.x,e.y+45*(e.size||1));
+        if((e.evilThingStack||1)>1){
+          ctx.fillStyle="#210008";ctx.beginPath();ctx.arc(e.x+27*(e.size||1),e.y-27*(e.size||1),14,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle="#ffb4bd";ctx.fillText(`x${e.evilThingStack}`,e.x+27*(e.size||1),e.y-23*(e.size||1));
+        }
       }
       if(e.td61Modifier){ctx.fillStyle="#000c";ctx.fillRect(e.x-30,e.y-66*(e.size||1),60,16);ctx.fillStyle="#ecff75";ctx.fillText(e.td61Modifier,e.x,e.y-54*(e.size||1));}
     }

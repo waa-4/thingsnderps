@@ -7,15 +7,17 @@
   CONFIG.gameTitle = "Things & Derps";
 
   Object.assign(CONFIG.backgrounds, {
-    derpfieldB: "assets/chapter2/derpfield-b.svg"
+    derpfieldB: "assets/chapter2/backgrounds/world-1b.jpg",
+    derpforest: "assets/chapter2/backgrounds/derpforest.jpg"
   });
   Object.assign(CONFIG.images, {
-    derpfieldB: "assets/chapter2/derpfield-b.svg",
-    sakuraHeadsplitter: "assets/chapter2/sakura-headsplitter.svg",
-    spiderStump: "assets/chapter2/spider-stump.svg",
-    meltedDerp: "assets/chapter2/melted-derp.svg",
-    derpStar: "assets/chapter2/derp-star.svg",
-    decayedDerp: "assets/chapter2/decayed-derp.svg"
+    derpfieldB: "assets/chapter2/backgrounds/world-1b.jpg",
+    derpforest: "assets/chapter2/backgrounds/derpforest.jpg",
+    sakuraHeadsplitter: "assets/chapter2/things/sakura-headsplitter.png",
+    spiderStump: "assets/chapter2/things/spider-stump-gun.png",
+    meltedDerp: "assets/chapter2/enemies/melted-derptriangle.png",
+    derpStar: "assets/chapter2/enemies/homunculus-derpstar.png",
+    decayedDerp: "assets/chapter2/enemies/rotting-derp.png"
   });
 
   Object.assign(CONFIG.plants, {
@@ -40,10 +42,107 @@
   CONFIG.levels.push(...replacements);
 
   // Optional Chapter 2 audio names. Existing battle tracks remain safe fallbacks until files are replaced.
-  CONFIG.audio.tracks.world1B = CONFIG.audio.tracks.world1B || "audio/chapter2-world1b.m4a";
+  CONFIG.audio.tracks.world1B = "audio/chapter2/derptheme1b.m4a";
+  CONFIG.audio.tracks.derpforest = "audio/chapter2/derpforest.m4a";
   CONFIG.audio.tracks.world1BBoss = CONFIG.audio.tracks.world1BBoss || "audio/chapter2-world1b-boss.m4a";
   for (const key of ["world1B","world1BBoss"]){
     if (!music[key]) { music[key]=new Audio(CONFIG.audio.tracks[key]); music[key].loop=true; music[key].volume=CONFIG.audio.musicVolume; music[key].addEventListener("error",()=>{ music[key]=music.battle || music.world1; },{once:true}); }
+  }
+
+
+  // -------- Evil Thing tile spawning --------
+  // Evil Things are removed from normal wave queues. Their types are remembered per level,
+  // then they materialize on board tiles over time instead.
+  const EVIL_THING_TYPES = new Set(
+    Object.keys(CONFIG.enemies).filter(id => CONFIG.enemies[id]?.evilThing)
+  );
+
+  // Stationary versions still need a way to fight from their tile.
+  Object.assign(CONFIG.enemies.evilFactory, {
+    rangedShooter:true, shootCooldown:185, shotDamage:18, shotSpeed:4.2
+  });
+  Object.assign(CONFIG.enemies.evilJet, {
+    rangedShooter:true, shootCooldown:92, shotDamage:13, shotSpeed:6.2
+  });
+
+  for (const level of CONFIG.levels) {
+    const pool = new Set(level.evilThingPool || []);
+    if (!Array.isArray(level.waves)) continue;
+    level.waves = level.waves.map(wave => {
+      if (!Array.isArray(wave)) return wave;
+      return wave.filter(spawn => {
+        if (spawn && EVIL_THING_TYPES.has(spawn.type)) {
+          pool.add(spawn.type);
+          return false;
+        }
+        return true;
+      });
+    });
+    if (pool.size) {
+      level.evilThingPool = [...pool];
+      level.evilThingTileSpawns = true;
+    }
+  }
+
+  function setupEvilThingTiles(){
+    if (!state?.level?.evilThingTileSpawns) return;
+    state.evilThingTiles = {
+      pool:[...(state.level.evilThingPool || [])],
+      nextTick: state.tick + rand(330, 570),
+      maximumTiles: state.level.boss ? 9 : 7
+    };
+  }
+
+  function spawnEvilThingOnTile(){
+    const sys = state?.evilThingTiles;
+    if (!sys?.pool?.length) return;
+    const placed = state.enemies.filter(e => e.evilThingTile);
+    const stackable = placed.filter(e => (e.evilThingStack || 1) < 4);
+
+    // Stacking is intentionally uncommon. Reaching x4 requires several lucky rolls.
+    if (stackable.length && Math.random() < 0.13) {
+      const target = stackable[rand(0, stackable.length - 1)];
+      const def = CONFIG.enemies[target.type] || {};
+      target.evilThingStack = Math.min(4, (target.evilThingStack || 1) + 1);
+      const hpGain = Math.round(Number(def.hp || target.maxHp) * 0.7);
+      target.maxHp += hpGain;
+      target.hp += hpGain;
+      target.damage = Number(def.damage || target.damage) * (1 + 0.22 * (target.evilThingStack - 1));
+      target.shotDamageMult = 1 + 0.24 * (target.evilThingStack - 1);
+      state.texts.push({x:target.x,y:target.y-45,text:`EVIL STACK x${target.evilThingStack}`,color:'#ff6677',life:80});
+      return;
+    }
+
+    if (placed.length >= sys.maximumTiles) return;
+    const occupied = new Set(placed.map(e => `${e.evilThingCol}:${e.row}`));
+    const choices=[];
+    for(let col=4; col<COLS; col++) for(let row=0; row<ROWS; row++) {
+      if(!occupied.has(`${col}:${row}`)) choices.push({col,row});
+    }
+    if(!choices.length) return;
+    const tile=choices[rand(0,choices.length-1)];
+    const type=sys.pool[rand(0,sys.pool.length-1)];
+    const before=state.enemies.length;
+    spawnEnemy({type,row:tile.row});
+    const enemy=state.enemies[before];
+    if(!enemy)return;
+    const center=cellCenter(tile.col,tile.row);
+    enemy.x=center.x;
+    enemy.y=center.y;
+    enemy.speed=0;
+    enemy.baseSpeed=0;
+    enemy.evilThingTile=true;
+    enemy.evilThingCol=tile.col;
+    enemy.evilThingStack=1;
+    enemy.hitbox=Math.max(enemy.hitbox,46*(enemy.size||1));
+    state.texts.push({x:enemy.x,y:enemy.y-45,text:'EVIL THING PLACED',color:'#ff6677',life:75});
+  }
+
+  function updateEvilThingTiles(){
+    const sys=state?.evilThingTiles;
+    if(!sys || state.tick < sys.nextTick) return;
+    spawnEvilThingOnTile();
+    sys.nextTick=state.tick+rand(390,780);
   }
 
   // -------- Temporary Testing Mode --------
@@ -97,10 +196,12 @@
   const oldStart=window.startLevel;
   window.startLevel=function startLevelTesting(index,listName,selected){
     oldStart(index,listName,selected);
+    setupEvilThingTiles();
     if(active()&&state){ if(Number.isFinite(testingFlags.startGlow))state.glow=testingFlags.startGlow; const banner=document.createElement("div");banner.className="testing-banner";banner.textContent="TESTING MODE — PROGRESS WILL NOT SAVE";document.body.appendChild(banner); }
   };
   const oldEffects=window.updateEffects;
   window.updateEffects=function updateEffectsTesting(){
+    updateEvilThingTiles();
     if(active()&&state){ if(testingFlags.infiniteGlow)state.glow=Math.max(state.glow,99999); if(testingFlags.noCooldowns)for(const k of Object.keys(state.cooldowns||{}))state.cooldowns[k]=0; if(testingFlags.oneHit)for(const e of state.enemies||[])e.hp=Math.min(e.hp,1); if(testingFlags.invincibleBase)for(const e of state.enemies||[])e.x=Math.max(e.x,GRID_X-20); }
     return oldEffects();
   };

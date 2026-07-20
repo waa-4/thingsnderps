@@ -4096,7 +4096,7 @@ function updateEnemies() {
             x: e.x - 25,
             y: cellCenter(0, r).y,
             row: r,
-            damage: def.shotDamage || 12,
+            damage: (def.shotDamage || 12) * (e.shotDamageMult || 1),
             speed: def.shotSpeed || 3.5
           });
         }
@@ -4421,7 +4421,17 @@ function drawEnemies() {
     const size = 68 * (e.size || 1);
 
     if (imageReady(img)) {
-      ctx.drawImage(img, e.x - size / 2, e.y - size / 2, size, size);
+      if (def.evilThing) {
+        // Enemy Things use the original Thing art, but face left and appear corrupted red.
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.scale(-1, 1);
+        ctx.filter = "sepia(1) saturate(9) hue-rotate(315deg) brightness(.82) contrast(1.15)";
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else {
+        ctx.drawImage(img, e.x - size / 2, e.y - size / 2, size, size);
+      }
     } else {
       drawFallbackSquare(
         e.x - size / 3,

@@ -1,0 +1,19 @@
+Things & Derps — Chapter 2 Texture + Evil Thing Tile Spawn Patch
+
+Install:
+1. Extract this ZIP into the repository root.
+2. Allow all matching files to be replaced.
+3. Upload/commit the resulting folders with their paths intact.
+
+Changes:
+- Uses the original uploaded World 1B and Derpforest backgrounds.
+- Uses the original Sakura Headsplitter, Spider Stump Gun, Melted Derptriangle,
+  Homunculus Derpstar, and Rotting Derp artwork.
+- White drawing canvases were made transparent for in-game use.
+- Adds the original World 1B and Derpforest music files.
+- Evil Things are removed from ordinary Derp wave spawning.
+- Evil Things now materialize over time on enemy-side board tiles.
+- They remain stationed on their tile and attack from there.
+- Rarely, an occupied Evil Thing tile stacks again, up to x4.
+- Stacks gain health and attack strength.
+- Evil Thing textures are horizontally flipped and displayed with a red corruption filter.
