@@ -224,3 +224,181 @@
   };
   showMenu();
 })();
+
+// ===== Things & Derps vB.1.0 refresh =====
+(function installVersionB(){
+  "use strict";
+  if(typeof CONFIG === "undefined") return;
+
+  const VERSION = "vB.1.0";
+  const STORY_LOADOUT_LIMIT = 10;
+  const ENDLESS_NAME = "ENDLESS-50"; // old save-compatible id
+  CONFIG.version = VERSION;
+  CONFIG.gameplay.maxLoadoutPlants = STORY_LOADOUT_LIMIT;
+
+  const isEndlessLevel = (level) => !!level && level.name === ENDLESS_NAME;
+  const endlessIndex = () => (CONFIG.minigames || []).findIndex(isEndlessLevel);
+  const endlessLevel = () => (CONFIG.minigames || [])[endlessIndex()];
+
+  const endless = endlessLevel();
+  if(endless){
+    endless.title = "True Endless";
+    endless.desc = "Loops forever. After wave 30, enemies shuffle and each wave gains one extra random enemy. Every 50 waves you may add five more Things.";
+    endless.endless = true;
+    endless.waves = endless.waves.slice(0,30);
+  }
+
+  // The normal game now allows ten Things. Endless temporarily removes the picker cap.
+  const oldShowLoadoutPicker = window.showLoadoutPicker;
+  window.showLoadoutPicker = function showLoadoutPickerB(index,listName){
+    const level = getLevelList(listName)?.[index];
+    CONFIG.gameplay.maxLoadoutPlants = isEndlessLevel(level) ? 9999 : STORY_LOADOUT_LIMIT;
+    return oldShowLoadoutPicker(index,listName);
+  };
+
+  const oldToggleLoadout = window.toggleLoadout;
+  window.toggleLoadout = function toggleLoadoutB(id){
+    return oldToggleLoadout(id);
+  };
+
+  const oldStartPickedLevel = window.startPickedLevel;
+  window.startPickedLevel = function startPickedLevelB(){
+    const level = pendingLoadout && getLevelList(pendingLoadout.listName)?.[pendingLoadout.index];
+    CONFIG.gameplay.maxLoadoutPlants = isEndlessLevel(level) ? 9999 : STORY_LOADOUT_LIMIT;
+    const result = oldStartPickedLevel();
+    CONFIG.gameplay.maxLoadoutPlants = STORY_LOADOUT_LIMIT;
+    return result;
+  };
+
+  const oldStartLevelB = window.startLevel;
+  window.startLevel = function startLevelB(index=0,listName="levels",loadout=CONFIG.defaultLoadout){
+    const level = getLevelList(listName)?.[index];
+    CONFIG.gameplay.maxLoadoutPlants = isEndlessLevel(level) ? 9999 : STORY_LOADOUT_LIMIT;
+    const result = oldStartLevelB(index,listName,loadout);
+    CONFIG.gameplay.maxLoadoutPlants = STORY_LOADOUT_LIMIT;
+    if(state && isEndlessLevel(state.level)){
+      state.tdEndless = {
+        baseWaves: JSON.parse(JSON.stringify(state.level.waves.slice(0,30))),
+        checkpointShown: 0
+      };
+    }
+    return result;
+  };
+
+  function shuffle(list){
+    const copy=[...list];
+    for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]];}
+    return copy;
+  }
+
+  function randomEnemyPool(){
+    const preferred=["basic","fast","armored","droneGun","alienGun","mechaDerp","meltedDerp","derpStar","decayedDerp"];
+    const pool=preferred.filter(id=>CONFIG.enemies[id]);
+    return pool.length?pool:Object.keys(CONFIG.enemies).filter(id=>!CONFIG.enemies[id]?.evilThing);
+  }
+
+  function createEndlessWave(waveNumber){
+    const sys=state.tdEndless;
+    const base=sys.baseWaves[(waveNumber-1)%sys.baseWaves.length] || [];
+    const wave=shuffle(base.map(s=>({...s,row:Math.floor(Math.random()*ROWS)})));
+    const extras=Math.max(0,waveNumber-30);
+    const pool=randomEnemyPool();
+    const maxDelay=Math.max(90,...wave.map(s=>Number(s.delay||0)));
+    for(let i=0;i<extras;i++){
+      wave.push({
+        type:pool[Math.floor(Math.random()*pool.length)],
+        row:Math.floor(Math.random()*ROWS),
+        delay:maxDelay+15+i*12
+      });
+    }
+    return shuffle(wave);
+  }
+
+  function availableCheckpointThings(){
+    return Object.keys(CONFIG.plants)
+      .filter(id=>id!=="removeTool" && isPlantUnlocked(id) && !state.loadout.includes(id));
+  }
+
+  window.tdBCheckpointSelection = new Set();
+  window.tdBToggleCheckpointThing = function(id){
+    const picked=window.tdBCheckpointSelection;
+    if(picked.has(id)) picked.delete(id);
+    else if(picked.size<5) picked.add(id);
+    else { toast("Choose up to 5 more Things."); return; }
+    document.querySelectorAll("[data-tdb-thing]").forEach(btn=>{
+      const on=picked.has(btn.dataset.tdbThing);
+      btn.textContent=(on?"[x] ":"[ ] ")+(CONFIG.plants[btn.dataset.tdbThing]?.name||btn.dataset.tdbThing);
+    });
+    const count=document.getElementById("tdbCheckpointCount");if(count)count.textContent=`${picked.size} / 5 selected`;
+  };
+  window.tdBContinueEndless = function(){
+    if(!state?.tdEndless)return;
+    for(const id of window.tdBCheckpointSelection){ if(!state.loadout.includes(id))state.loadout.push(id); }
+    window.tdBCheckpointSelection.clear();
+    document.getElementById("tdbCheckpoint")?.remove();
+    renderCards();
+    state.running=true;
+  };
+
+  function showCheckpoint(waveNumber){
+    if(!state?.tdEndless)return;
+    state.running=false;
+    window.tdBCheckpointSelection.clear();
+    const choices=availableCheckpointThings();
+    const overlay=document.createElement("div");
+    overlay.id="tdbCheckpoint";
+    overlay.className="td5-victory";
+    overlay.innerHTML=`<section class="tdb-checkpoint-box"><h1>WAVE ${waveNumber}</h1><p>The battle is paused. Add up to 5 more Things.</p><p id="tdbCheckpointCount" class="tiny">0 / 5 selected</p><div class="stack">${choices.length?choices.map(id=>`<button class="btn" data-tdb-thing="${id}" onclick="tdBToggleCheckpointThing('${id}')">[ ] ${CONFIG.plants[id]?.name||id}</button>`).join(""):"<p>Every unlocked Thing is already equipped.</p>"}</div><br><button class="btn good" onclick="tdBContinueEndless()">CONTINUE ENDLESS</button></section>`;
+    document.body.appendChild(overlay);
+  }
+
+  const oldUpdateWavesB=window.updateWaves;
+  window.updateWaves=function updateWavesB(){
+    if(state?.tdEndless && state.waveIndex>=state.level.waves.length){
+      state.level.waves.push(createEndlessWave(state.waveIndex+1));
+    }
+    const before=state?.waveIndex;
+    const result=oldUpdateWavesB();
+    if(state?.tdEndless && state.waveIndex!==before && state.waveIndex>0 && state.waveIndex%50===0 && state.tdEndless.checkpointShown!==state.waveIndex){
+      state.tdEndless.checkpointShown=state.waveIndex;
+      showCheckpoint(state.waveIndex);
+    }
+    return result;
+  };
+
+  const oldCheckEndB=window.checkEnd;
+  window.checkEnd=function checkEndB(){
+    if(state?.tdEndless)return;
+    return oldCheckEndB();
+  };
+
+  const oldUpdateHudB=window.updateHud;
+  window.updateHud=function updateHudB(){
+    const result=oldUpdateHudB();
+    if(state?.tdEndless){
+      const waveHud=document.getElementById("waveHud");
+      if(waveHud)waveHud.textContent=`Wave ${state.waveIndex+1} • Endless • ${state.gameSpeed}x`;
+    }
+    return result;
+  };
+
+  // Final, intentionally plain homepage. No news bubble or decorative image panel.
+  window.showMenu=function showMenuVersionB(){
+    document.querySelectorAll('.testing-banner,#tdbCheckpoint').forEach(x=>x.remove());
+    CONFIG.gameplay.maxLoadoutPlants=STORY_LOADOUT_LIMIT;
+    currentScreen="menu";state=null;document.body.classList.remove("td4-loadout");
+    if(typeof playMusic==="function"&&window.CONFIG?.audio?.menuTrack)playMusic(CONFIG.audio.menuTrack);
+    const money=typeof currencyHtml==="function"?currencyHtml():"";
+    setScreen(`<main class="td4-home"><section class="td4-shell"><div class="td4-panel"><h1 class="td4-title">Things &amp; Derps</h1><div class="td4-version">${VERSION}</div><div class="td4-status">${money}</div><nav class="td4-menu"><button class="btn td4-mainplay" onclick="td4Go('showLevelSelect')">STORY</button><button class="btn" onclick="td4Go('showMinigames')">MINIGAMES / ENDLESS</button><button class="btn" onclick="td4Pvp()">PVP</button><button class="btn" onclick="td4Go('showUpgrades')">UPGRADES</button><button class="btn" onclick="td4Go('showShop')">SHOP</button><button class="btn" onclick="td4Go('showAlmanac')">STATS</button><button class="btn" onclick="td4Go('showCustomLevels')">CUSTOM LEVELS</button><button class="btn" onclick="td4Go('showSaveBackup')">SAVE TOOLS</button><button class="btn" onclick="showSettings()">SETTINGS</button></nav><div id="td4SaveStatus" class="td4-save"></div></div></section></main>`);
+  };
+
+  // Fix old hard-coded picker wording while keeping all save ids compatible.
+  const observerB=new MutationObserver(()=>{
+    document.querySelectorAll('.screen .sub').forEach(el=>{
+      if(el.textContent.includes('choose up to 9999')) el.textContent=el.textContent.replace(/choose up to 9999 Things?/i,'choose any number of Things');
+    });
+  });
+  const appB=document.getElementById('app');if(appB)observerB.observe(appB,{childList:true,subtree:true});
+
+  showMenu();
+})();

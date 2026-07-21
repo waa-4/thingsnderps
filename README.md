@@ -1,6 +1,6 @@
 # Things & Derps
 
-A browser lane-defense game. This cleaned v7.0 build begins Chapter 2 with World 1B.
+A browser lane-defense game. Version vB.1.0 refreshes the interface and adds true endless progression while keeping Chapter 2 and existing saves compatible.
 
 ## Clean structure
 
