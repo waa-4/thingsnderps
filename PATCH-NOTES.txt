@@ -10,3 +10,11 @@ Things & Derps vB.1.0
 - Every 50 waves, the game pauses and lets the player add up to 5 more unlocked Things.
 - Version text is now vB.1.0.
 - Existing save keys and the old Endless internal id remain unchanged for compatibility.
+
+Creator Studio / Mod System V1
+- Replaced the old PAD Modder page with a separate Things & Derps Creator Studio.
+- Added editable levels, Things, enemies, world groups, style themes, and asset importing.
+- Added .tadmod JSON import/export.
+- Added an installed-mod manager with enable/disable/edit/delete controls.
+- Added js/mod-runtime.js so mods stay separate from the base game and are easier to preserve during updates.
+- Updated in-game links to say Open Creator Studio.

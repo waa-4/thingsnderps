@@ -2429,7 +2429,7 @@ function showMenu() {
           <button class="btn" onclick="showAlmanac()">Meet Da Whatever</button>
           <button class="btn" onclick="showCustomLevels()">Custom Levels</button>
 <button class="btn warn" onclick="showSaveBackup()">Save Backup</button>
-<button class="btn" onclick="window.open('mod/','_self')">Open PAD Modder</button>
+<button class="btn" onclick="window.open('mod/','_self')">Open Creator Studio</button>
         </div>
       </div>
 
@@ -4814,7 +4814,7 @@ showMenu = function showMenu() {
           <button class="btn" onclick="showAlmanac()">Meet Da Whatever</button>
           <button class="btn" onclick="showCustomLevels()">Custom Levels</button>
           <button class="btn warn" onclick="showSaveBackup()">Save Backup</button>
-          <button class="btn good" onclick="window.open('mod/','_self')">Open PAD Modder / Fangame Forge</button>
+          <button class="btn good" onclick="window.open('mod/','_self')">Open Creator Studio</button>
         </div>
       </div>
       <div class="panel updatePanel">
@@ -5178,7 +5178,7 @@ showMenu = function showMenu() {
           <button class="btn" onclick="showAlmanac()">Meet Da Whatever</button>
           <button class="btn" onclick="showCustomLevels()">Custom Levels</button>
           <button class="btn warn" onclick="showSaveBackup()">Save Backup</button>
-          <button class="btn good" onclick="window.open('mod/','_self')">Open PAD Modder / Fangame Forge</button>
+          <button class="btn good" onclick="window.open('mod/','_self')">Open Creator Studio</button>
         </div>
       </div>
       <div class="panel updatePanel">

@@ -1,119 +1,69 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PAD Modder / Fangame Forge - Clown Multiverse</title>
-  <link rel="stylesheet" href="mod.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Things & Derps Creator Studio</title>
+  <link rel="stylesheet" href="mod.css?v=studio1">
 </head>
 <body>
-  <main class="app">
-    <header class="hero">
-      <div>
-        <h1>PAD Modder</h1>
-        <p>Fangame Forge - Clown Multiverse update: make levels, plants, derps, and grouped config packs.</p>
-      </div>
-      <nav class="hero-actions">
-        <a class="btn ghost" href="../">Back to Game</a>
-        <button class="btn" id="newLevelBtn">New Level</button>
-        <button class="btn" id="saveBtn">Save Level</button>
+  <header class="topbar">
+    <div><h1>Things & Derps Creator Studio</h1><p>Build content without editing the base game.</p></div>
+    <div class="actions"><a class="button ghost" href="../">Back to Game</a><button id="newPack">New Mod</button><button id="savePack">Save</button><button id="exportPack">Export .tadmod</button></div>
+  </header>
+  <main class="shell">
+    <aside class="sidebar">
+      <label>Mod name<input id="modName" value="My Things & Derps Mod"></label>
+      <label>Mod ID<input id="modId" value="my-mod"></label>
+      <label>Author<input id="modAuthor" value="Br Wood"></label>
+      <label>Version<input id="modVersion" value="1.0.0"></label>
+      <label>Description<textarea id="modDescription">My custom Things & Derps expansion.</textarea></label>
+      <nav id="tabs">
+        <button data-tab="dashboard" class="on">Dashboard</button>
+        <button data-tab="levels">Levels</button>
+        <button data-tab="things">Things</button>
+        <button data-tab="enemies">Enemies</button>
+        <button data-tab="worlds">Worlds</button>
+        <button data-tab="theme">Style</button>
+        <button data-tab="assets">Assets</button>
+        <button data-tab="manager">Installed Mods</button>
       </nav>
-    </header>
-
-    <nav class="tabs">
-      <button class="tab on" data-tab="level">Level Editor</button>
-      <button class="tab" data-tab="plant">Plant Maker</button>
-      <button class="tab" data-tab="derp">Derp Maker</button>
-      <button class="tab" data-tab="pack">Pack Export</button>
-    </nav>
-
-    <section class="layout" id="levelTab">
-      <aside class="panel sidebar">
-        <h2>Saved Levels</h2>
-        <div id="savedLevels" class="saved-list"></div>
-        <hr />
-        <h2>Import / Export</h2>
-        <button class="btn full" id="exportBtn">Export Share Code</button>
-        <button class="btn full" id="importBtn">Import Share Code</button>
-        <textarea id="shareBox" placeholder="Share code appears here. Paste a code here to import."></textarea>
-        <p class="hint">Saved levels use browser storage. Export codes are better for sending to friends.</p>
-      </aside>
-      <section class="panel editor">
-        <h2>Level Settings</h2>
-        <div class="form-grid">
-          <label>Level Name<input id="levelName" value="Custom-1" maxlength="24" /></label>
-          <label>Title<input id="levelTitle" value="My Weird Level" maxlength="50" /></label>
-          <label>World<input id="worldNumber" type="number" min="0" max="99" value="4" /></label>
-          <label class="wide">Description<input id="levelDesc" value="Made in PAD Modder." maxlength="160" /></label>
-          <label>Start Glow<input id="startGlow" type="number" min="0" max="9000" value="200" /></label>
-          <label>Background<select id="backgroundSelect"></select></label>
-          <label>Music<select id="musicSelect"></select></label>
-          <label>Difficulty<select id="difficultySelect"><option>Starter</option><option>Medium</option><option>Hard</option><option>Boss</option><option>Joke</option></select></label>
-        </div>
-        <section class="tool-row"><div><h2>Lava Grid</h2><p class="hint">Click tiles to toggle lava. Coordinates are [column, row].</p></div><button class="btn ghost" id="clearLavaBtn">Clear Lava</button></section>
-        <div id="lavaGrid" class="lava-grid" aria-label="Lava grid editor"></div>
-        <section class="tool-row"><div><h2>Waves</h2><p class="hint">Up to 15 waves. Up to 12 enemies per wave. Delay is in game ticks.</p></div><div class="tool-actions"><button class="btn ghost" id="addWaveBtn">Add Wave</button><button class="btn ghost danger" id="clearWavesBtn">Clear Waves</button></div></section>
-        <div id="wavesArea"></div>
+    </aside>
+    <section class="workspace">
+      <section id="dashboardTab" class="tabpage on">
+        <h2>Your editable expansion</h2>
+        <div class="cards"><article><b id="levelCount">0</b><span>Levels</span></article><article><b id="thingCount">0</b><span>Things</span></article><article><b id="enemyCount">0</b><span>Enemies</span></article><article><b id="assetCount">0</b><span>Assets</span></article></div>
+        <div class="notice"><b>Update-safe design:</b> the normal game stays in its existing files. Your creations are saved as a separate mod and loaded by <code>js/mod-runtime.js</code>.</div>
+        <h3>Quick start</h3><p>Create or clone content, save the mod, enable it under Installed Mods, then reload the game.</p>
+        <div class="actions"><button data-go="levels">Create a Level</button><button data-go="things">Create a Thing</button><button data-go="enemies">Create an Enemy</button></div>
       </section>
-      <aside class="panel preview"><h2>Preview JSON</h2><pre id="jsonPreview"></pre></aside>
-    </section>
 
-    <section class="layout hidden" id="plantTab">
-      <section class="panel editor widePanel">
-        <h2>Plant Maker</h2>
-        <p class="hint">This makes grouped plant configs for fangames. Texture can be a file path like <b>assets/myplant.png</b> or an existing image key.</p>
-        <div class="form-grid">
-          <label>ID<input id="plantId" value="myPlant" /></label>
-          <label>Name<input id="plantName" value="My Plant" /></label>
-          <label>Group<select id="plantGroup"><option>economy</option><option>walls</option><option>shooters</option><option>specials</option><option>fangame</option></select></label>
-          <label>Texture / Image<input id="plantImg" value="assets/myplant.png" /></label>
-          <label>Cost<input id="plantCost" type="number" value="100" /></label>
-          <label>HP<input id="plantHp" type="number" value="100" /></label>
-          <label>Role<input id="plantRole" value="Shooter" /></label>
-          <label>Fire Type<select id="plantFire"><option>straight</option><option>lob</option><option>multiLane</option><option>allLane</option><option>wideShot</option><option>scatter</option><option>none</option></select></label>
-          <label>Cooldown<input id="plantCooldown" type="number" value="120" /></label>
-          <label>Damage<input id="plantDamage" type="number" value="25" /></label>
-          <label>Speed<input id="plantSpeed" type="number" value="5" /></label>
-          <label>Unlock At<input id="plantUnlock" value="4-1" /></label>
-          <label class="wide">Description<input id="plantDesc" value="A fangame plant." /></label>
-        </div>
-        <div class="tool-actions"><button class="btn" id="makePlantBtn">Save Plant Config</button><button class="btn ghost" id="copyPlantBtn">Copy Plant JSON</button></div>
-        <pre id="plantPreview"></pre>
+      <section id="levelsTab" class="tabpage">
+        <div class="sectionhead"><div><h2>Level Editor</h2><p>Add stages or replace one by using the same level name.</p></div><button id="addLevel">New Level</button></div>
+        <div class="split"><div id="levelList" class="itemlist"></div><div class="editor" id="levelEditor"></div></div>
       </section>
-    </section>
 
-    <section class="layout hidden" id="derpTab">
-      <section class="panel editor widePanel">
-        <h2>Derp Maker</h2>
-        <p class="hint">Creates enemy/derp configs. Turn on ranged shooter to make an Alien Gunner style enemy.</p>
-        <div class="form-grid">
-          <label>ID<input id="derpId" value="myDerp" /></label>
-          <label>Name<input id="derpName" value="My Derp" /></label>
-          <label>Group<select id="derpGroup"><option>derps</option><option>machines</option><option>aliens</option><option>fangame</option></select></label>
-          <label>Texture / Image<input id="derpImg" value="assets/myderp.png" /></label>
-          <label>HP<input id="derpHp" type="number" value="120" /></label>
-          <label>Speed<input id="derpSpeed" type="number" step="0.01" value="0.18" /></label>
-          <label>Damage<input id="derpDamage" type="number" value="12" /></label>
-          <label>Size<input id="derpSize" type="number" step="0.05" value="1" /></label>
-          <label>Tags<input id="derpTags" value="derp" /></label>
-          <label>Ranged?<select id="derpRanged"><option value="false">false</option><option value="true">true</option></select></label>
-          <label>Boss?<select id="derpBoss"><option value="false">false</option><option value="true">true</option></select></label>
-          <label class="wide">Description<input id="derpDesc" value="A fangame derp." /></label>
-        </div>
-        <div class="tool-actions"><button class="btn" id="makeDerpBtn">Save Derp Config</button><button class="btn ghost" id="copyDerpBtn">Copy Derp JSON</button></div>
-        <pre id="derpPreview"></pre>
+      <section id="thingsTab" class="tabpage">
+        <div class="sectionhead"><div><h2>Thing Maker</h2><p>Create shooters, walls, producers, and specials.</p></div><button id="addThing">New Thing</button></div>
+        <div class="split"><div id="thingList" class="itemlist"></div><div class="editor" id="thingEditor"></div></div>
       </section>
-    </section>
 
-    <section class="layout hidden" id="packTab">
-      <section class="panel editor widePanel">
-        <h2>Fangame Pack Export</h2>
-        <p class="hint">Exports everything you made in this browser: levels, plants, and derps. Paste it into a fangame loader later.</p>
-        <div class="tool-actions"><button class="btn" id="refreshPackBtn">Refresh Pack</button><button class="btn ghost" id="copyPackBtn">Copy Pack JSON</button><button class="btn ghost danger" id="clearPackBtn">Clear Saved Plants/Derps</button></div>
-        <textarea id="packBox" class="bigBox"></textarea>
+      <section id="enemiesTab" class="tabpage">
+        <div class="sectionhead"><div><h2>Enemy Maker</h2><p>Create normal enemies, ranged units, and bosses.</p></div><button id="addEnemy">New Enemy</button></div>
+        <div class="split"><div id="enemyList" class="itemlist"></div><div class="editor" id="enemyEditor"></div></div>
       </section>
+
+      <section id="worldsTab" class="tabpage"><h2>World Organizer</h2><p>Worlds are labels that help you organize level names and future story pages.</p><div class="actions"><button id="addWorld">Add World</button></div><div id="worldList" class="gridlist"></div></section>
+
+      <section id="themeTab" class="tabpage"><h2>Style Editor</h2><div class="formgrid">
+        <label>Background<input id="themeBackground" type="color" value="#050914"></label><label>Panel<input id="themePanel" type="color" value="#0b1324"></label><label>Text<input id="themeText" type="color" value="#ffffff"></label><label>Accent<input id="themeAccent" type="color" value="#17345f"></label><label>Outline<input id="themeOutline" type="color" value="#ffffff"></label><label>Corner radius<input id="themeRadius" type="number" value="8" min="0" max="40"></label><label class="wide">Font stack<input id="themeFont" value="Arial, sans-serif"></label></div><div id="themePreview" class="themePreview"><h3>Things & Derps</h3><button>Example Button</button><p>This previews the mod's general style.</p></div></section>
+
+      <section id="assetsTab" class="tabpage"><div class="sectionhead"><div><h2>Asset Manager</h2><p>Images and audio are stored inside the exported mod as data.</p></div><label class="button filebutton">Add Files<input id="assetInput" type="file" multiple accept="image/*,audio/*"></label></div><div id="assetList" class="assetgrid"></div></section>
+
+      <section id="managerTab" class="tabpage"><div class="sectionhead"><div><h2>Installed Mods</h2><p>Enable, disable, import, replace, and delete mods.</p></div><label class="button filebutton">Import .tadmod<input id="importInput" type="file" accept=".tadmod,.json,application/json"></label></div><div id="installedList" class="gridlist"></div></section>
     </section>
   </main>
-  <script src="mod.js?v=27"></script>
+  <div id="toast" aria-live="polite"></div>
+  <script src="mod.js?v=studio1"></script>
 </body>
 </html>
