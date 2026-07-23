@@ -28,7 +28,13 @@
     const content = pack.content || pack;
     mergeObject(CONFIG.images, content.images);
     mergeObject(CONFIG.backgrounds, content.backgrounds);
+    mergeObject(CONFIG.gameplay, content.gameplay);
+    mergeObject(CONFIG.currency, content.currency);
+    mergeObject(CONFIG.board, content.board);
     if (content.audio?.tracks) mergeObject(CONFIG.audio.tracks, content.audio.tracks);
+    if (Array.isArray(content.defaultLoadout) && content.defaultLoadout.length) CONFIG.defaultLoadout = clone(content.defaultLoadout);
+    if (Array.isArray(content.worlds)) CONFIG.worlds = clone(content.worlds);
+    if (Array.isArray(content.chapters)) CONFIG.chapters = clone(content.chapters);
 
     for (const item of content.things || content.plants || []) {
       if (!item?.id) continue;
